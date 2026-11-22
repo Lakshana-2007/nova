@@ -1,6 +1,6 @@
 # Evals
 
-Golden test sets + a lightweight runner for evaluating Buddy's actual agent
+Golden test sets + a lightweight runner for evaluating Nova's actual agent
 behavior per skill (Prompt 11.5.4).
 
 ## Layout
@@ -24,7 +24,7 @@ Each case:
 Every skill's case file covers at least one `happy_path`, one
 `ambiguous_input`, one `hitl_required`, and one `adversarial` case (reusing
 the injection examples from Prompt 11.5.3), per Prompt 11.5.4's
-requirement — plus `read_only`, `edge_case`, and `boundary` (cross-skill
+requirement â€” plus `read_only`, `edge_case`, and `boundary` (cross-skill
 refusal) cases for broader coverage.
 
 ## Running
@@ -45,19 +45,19 @@ the same `trace()` helper the chat API uses (searchable there by
 Checks per case:
 - **Trajectory match**: `expected_tool_calls` must appear as an
   order-preserving subsequence of the actual tool-call sequence (extra
-  calls in between — e.g. an incidental `remember()` — are tolerated;
+  calls in between â€” e.g. an incidental `remember()` â€” are tolerated;
   LLM trajectories aren't perfectly deterministic, so exact-sequence
   matching would be too brittle to be useful).
 - **Outcome rubric**: a simple keyword-overlap between `expected_outcome`
-  and the agent's final response text (≥25% of the description's
-  significant words must appear in the response) — a rubric, not an
+  and the agent's final response text (â‰¥25% of the description's
+  significant words must appear in the response) â€” a rubric, not an
   exact-text check, per the prompt's own framing.
 
 Output is a pass/fail summary table per skill, followed by a detail dump
 (expected vs. actual tool calls, error if any, truncated response text)
 for every failing case.
 
-## Known limitation — quota-dependent runs
+## Known limitation â€” quota-dependent runs
 
 This harness makes **real LLM calls** through the same multi-provider
 fallback router every skill's chat uses
@@ -65,25 +65,25 @@ fallback router every skill's chat uses
 the live agent (both `tasks` and `habits` cases were run for real,
 correctly capturing tool-call trajectories, including a case whose actual
 sequence had an extra `remember()` call correctly tolerated as a
-subsequence match) — but a full clean run across all 72 cases was not
+subsequence match) â€” but a full clean run across all 72 cases was not
 achievable in one sitting today because the Gemini free-tier daily quota
 (20 requests/day) was already exhausted by earlier work in this project,
 and this project's only other configured fallback (Hugging Face Inference
 Providers) is not currently authenticated (401), leaving Groq as the sole
 working provider for any turn where Gemini fails *before* it starts
-streaming a response — a turn where Gemini fails *mid-stream* (a
+streaming a response â€” a turn where Gemini fails *mid-stream* (a
 documented, accepted limitation of `model_router.py`'s fallback client) is
 not recoverable and surfaces as a failed case with the real error message,
 by design (the harness reports real infrastructure failures honestly
 rather than masking them as false passes).
 
-None of this is a bug in the harness itself — re-run once free-tier quota
+None of this is a bug in the harness itself â€” re-run once free-tier quota
 resets (or with a paid Gemini tier / a working HF token configured) for a
 fully clean pass.
 
 Any test data incidentally created by a real eval run (it exercises real
 `create_task`/`add_habit`/`remember` etc. tool calls against the actual
-database) must be cleaned up manually afterward — the harness does not do
+database) must be cleaned up manually afterward â€” the harness does not do
 this automatically, since it has no way to distinguish an eval-created row
 from a real one after the fact. Always check `tasks`/`habits`/
 `memory_facts`/etc. after a run.
