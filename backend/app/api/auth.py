@@ -15,8 +15,7 @@ existing endpoint's data per-account.
 
 from datetime import date, datetime, timezone
 
-import jwt
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -25,13 +24,13 @@ from app.common.notifications import send_email
 from app.common.pii import _EMAIL_RE  # reuse the same email-shape check
 from app.core.config import get_settings
 from app.core.db import AsyncSessionLocal
+from app.core.dependencies import get_current_user
 from app.core.models import Gender, PasswordResetToken, RefreshToken, User, UserProfile
 from app.core.security import (
     ACCESS_TOKEN_TTL,
     PASSWORD_RESET_TOKEN_TTL,
     REFRESH_TOKEN_TTL,
     create_access_token,
-    decode_access_token,
     generate_opaque_token,
     hash_password,
     hash_token,
@@ -106,25 +105,6 @@ def _set_auth_cookies(
 def _clear_auth_cookies(response: Response) -> None:
     response.delete_cookie("access_token", path="/")
     response.delete_cookie("refresh_token", path="/")
-
-
-async def get_current_user(
-    access_token: str | None = Cookie(default=None),
-) -> User:
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    try:
-        user_id = decode_access_token(access_token)
-    except jwt.PyJWTError as exc:
-        raise HTTPException(
-            status_code=401, detail="Invalid or expired session"
-        ) from exc
-
-    async with AsyncSessionLocal() as db:
-        user = await db.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return user
 
 
 @router.post("/signup", response_model=UserOut, status_code=201)
